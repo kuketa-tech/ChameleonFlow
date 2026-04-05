@@ -26,22 +26,31 @@
       cursor: default;
     }
 
-    /* кастомный курсор — лёгкое свечение */
+    /* кастомный курсор — с эффектом следа и масштабирования */
     .custom-cursor {
-      width: 20px;
-      height: 20px;
-      background: rgba(100, 150, 255, 0.4);
+      width: 24px;
+      height: 24px;
+      background: rgba(100, 150, 255, 0.25);
+      border: 2px solid rgba(140, 180, 255, 0.8);
       border-radius: 50%;
       position: fixed;
       pointer-events: none;
       z-index: 9999;
       backdrop-filter: blur(4px);
-      transition: transform 0.1s ease, width 0.2s, height 0.2s;
+      transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), width 0.2s, height 0.2s, background 0.2s;
       transform: translate(-50%, -50%);
       mix-blend-mode: screen;
+      box-shadow: 0 0 12px rgba(100, 150, 255, 0.6);
+    }
+    .custom-cursor.hover-effect {
+      width: 48px;
+      height: 48px;
+      background: rgba(100, 150, 255, 0.15);
+      border-width: 3px;
+      transform: translate(-50%, -50%) scale(1.2);
     }
 
-    /* CANVAS для динамического фона с частицами и связями */
+    /* CANVAS для динамического фона с частицами и связями (улучшенные цвета и мерцание) */
     #particles-canvas {
       position: fixed;
       top: 0;
@@ -50,27 +59,29 @@
       height: 100%;
       z-index: 0;
       pointer-events: none;
-      opacity: 0.7;
+      opacity: 0.85;
     }
 
-    /* анимированный градиентный оверлей поверх canvas */
+    /* анимированный градиентный оверлей с движением */
     .animated-gradient {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 50% 30%, rgba(20, 30, 70, 0.4), rgba(2, 2, 5, 0.85));
+      background: radial-gradient(circle at 40% 50%, rgba(20, 30, 80, 0.5), rgba(2, 2, 5, 0.9));
       z-index: 1;
       pointer-events: none;
-      animation: subtlePulse 12s infinite alternate;
+      animation: gradientShift 16s ease infinite alternate;
     }
 
-    @keyframes subtlePulse {
-      0% { opacity: 0.6; background-size: 100% 100%; }
-      100% { opacity: 1; background-size: 120% 120%; background-position: 10% 20%; }
+    @keyframes gradientShift {
+      0% { opacity: 0.6; background-position: 0% 0%; background-size: 100% 100%; }
+      50% { opacity: 0.85; background-position: 20% 30%; background-size: 150% 150%; }
+      100% { opacity: 0.7; background-position: -10% 20%; background-size: 120% 120%; }
     }
 
+    /* сетка с параллакс-эффектом */
     .grid-overlay {
       position: fixed;
       top: 0;
@@ -78,17 +89,17 @@
       width: 100%;
       height: 100%;
       background-image: 
-        linear-gradient(rgba(70, 100, 200, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(70, 100, 200, 0.05) 1px, transparent 1px);
-      background-size: 45px 45px;
+        linear-gradient(rgba(70, 100, 200, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(70, 100, 200, 0.08) 1px, transparent 1px);
+      background-size: 55px 55px;
       pointer-events: none;
       z-index: 1;
-      animation: gridShift 20s linear infinite;
+      animation: gridParallax 22s linear infinite;
     }
 
-    @keyframes gridShift {
+    @keyframes gridParallax {
       0% { background-position: 0 0; }
-      100% { background-position: 45px 45px; }
+      100% { background-position: 70px 70px; }
     }
 
     /* основной контент выше canvas */
@@ -97,11 +108,11 @@
       z-index: 10;
     }
 
-    /* улучшенная анимация появления с эффектом stagger */
+    /* улучшенная анимация появления с эффектом "волна" и трансформацией */
     .fade-up {
       opacity: 0;
-      transform: translateY(50px) scale(0.98);
-      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+      transform: translateY(60px) scale(0.96);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
 
     .fade-up.visible {
@@ -109,13 +120,13 @@
       transform: translateY(0) scale(1);
     }
 
-    /* задержки для элементов сетки */
+    /* задержки для элементов сетки с эффектом очереди */
     .grid-2cols .fade-up:nth-child(1) { transition-delay: 0.05s; }
-    .grid-2cols .fade-up:nth-child(2) { transition-delay: 0.1s; }
-    .grid-2cols .fade-up:nth-child(3) { transition-delay: 0.15s; }
-    .grid-2cols .fade-up:nth-child(4) { transition-delay: 0.2s; }
+    .grid-2cols .fade-up:nth-child(2) { transition-delay: 0.15s; }
+    .grid-2cols .fade-up:nth-child(3) { transition-delay: 0.25s; }
+    .grid-2cols .fade-up:nth-child(4) { transition-delay: 0.35s; }
 
-    /* Стеклянные карточки с улучшенным эффектом и бликами */
+    /* Стеклянные карточки с 3D-эффектом при наведении и улучшенным свечением */
     .glass-card {
       background: rgba(8, 8, 14, 0.55);
       backdrop-filter: blur(14px);
@@ -125,6 +136,8 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      transform-style: preserve-3d;
+      transform: perspective(1000px) translateZ(0);
     }
 
     .glass-card::before {
@@ -134,8 +147,8 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-      transition: left 0.7s ease;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.8s ease;
       pointer-events: none;
     }
 
@@ -144,13 +157,13 @@
     }
 
     .glass-card:hover {
-      border-color: rgba(120, 160, 255, 0.6);
-      background: rgba(12, 12, 22, 0.8);
-      transform: translateY(-8px) scale(1.01);
-      box-shadow: 0 30px 45px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(100,150,255,0.2);
+      border-color: rgba(120, 160, 255, 0.8);
+      background: rgba(18, 18, 32, 0.85);
+      transform: perspective(1000px) translateY(-10px) translateZ(20px) scale(1.01);
+      box-shadow: 0 30px 45px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(100,150,255,0.3);
     }
 
-    /* кнопки — современные градиенты + эффект свечения */
+    /* кнопки — современные градиенты + пульсация + ripple */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -161,7 +174,7 @@
       padding: 0.9rem 2rem;
       border-radius: 3rem;
       text-decoration: none;
-      transition: transform 0.25s ease, box-shadow 0.3s ease;
+      transition: transform 0.25s ease, box-shadow 0.3s ease, filter 0.2s;
       letter-spacing: -0.2px;
       font-size: 1rem;
       border: none;
@@ -173,8 +186,9 @@
     }
 
     .btn:hover {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255,255,255,0.4);
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255,255,255,0.5);
+      filter: brightness(1.02);
     }
 
     .btn::after {
@@ -185,7 +199,7 @@
       width: 0;
       height: 0;
       border-radius: 50%;
-      background: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.7);
       transform: translate(-50%, -50%);
       transition: width 0.5s, height 0.5s;
       z-index: -1;
@@ -205,10 +219,10 @@
     }
 
     .btn-outline:hover {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.15);
       border-color: white;
       transform: scale(1.02);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 8px rgba(255,255,255,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 12px rgba(255,255,255,0.3);
     }
 
     .btn-dark {
@@ -218,9 +232,9 @@
     }
 
     .btn-dark:hover {
-      background: linear-gradient(145deg, #1c1c28, #0f0f16);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.5), 0 0 12px rgba(100,150,255,0.3);
+      background: linear-gradient(145deg, #1f1f2e, #12121a);
+      transform: translateY(-4px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(100,150,255,0.4);
     }
 
     /* секции */
@@ -245,11 +259,12 @@
       -webkit-background-clip: text;
       color: transparent;
       animation: textGlow 4s infinite alternate;
+      transition: text-shadow 0.3s;
     }
 
     @keyframes textGlow {
       0% { text-shadow: 0 0 0px rgba(160,180,255,0); }
-      100% { text-shadow: 0 0 20px rgba(160,180,255,0.5); }
+      100% { text-shadow: 0 0 25px rgba(160,180,255,0.6); }
     }
 
     h2 {
@@ -263,6 +278,11 @@
       color: transparent;
       position: relative;
       display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    h2:hover {
+      transform: scale(1.02);
+      text-shadow: 0 0 8px rgba(185,195,255,0.4);
     }
 
     .badge {
@@ -275,11 +295,12 @@
       width: fit-content;
       border: 1px solid rgba(255,255,255,0.2);
       letter-spacing: 0.3px;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
     }
-
-    .badge i {
-      margin-right: 6px;
+    .badge:hover {
+      background: rgba(110, 130, 200, 0.45);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.5);
     }
 
     .grid-2cols {
@@ -303,15 +324,16 @@
       font-size: 0.8rem;
       font-weight: 500;
       border: 1px solid rgba(255,255,255,0.1);
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.2);
     }
     .tech-item:hover {
-      background: rgba(80, 100, 150, 0.5);
-      border-color: rgba(255,255,255,0.4);
-      transform: translateY(-2px) scale(1.02);
+      background: rgba(80, 100, 150, 0.7);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.3);
     }
 
-    /* таблица улучшенная с анимацией строк */
+    /* таблица улучшенная с анимацией строк и плавным появлением */
     .comparison-table {
       width: 100%;
       border-collapse: separate;
@@ -327,7 +349,7 @@
       padding: 1.2rem 1rem;
       text-align: left;
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition: all 0.2s;
+      transition: all 0.25s ease;
     }
 
     .comparison-table tr:last-child td {
@@ -340,25 +362,27 @@
       font-size: 1rem;
     }
     .comparison-table tr:hover td {
-      background: rgba(100, 150, 255, 0.08);
+      background: rgba(100, 150, 255, 0.12);
       transform: scale(1.002);
+      padding-left: 1.3rem;
     }
 
-    /* карточки цен с анимацией пульсации */
+    /* карточки цен с анимацией пульсации и 3D */
     .pricing-card {
       background: linear-gradient(145deg, #0a0a12, #030308);
       border-radius: 2rem;
       padding: 2rem;
       text-align: center;
       border: 1px solid rgba(255,255,255,0.12);
-      transition: all 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      transition: all 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.2);
       position: relative;
       overflow: hidden;
+      transform: translateY(0);
     }
     .pricing-card:hover {
-      transform: translateY(-12px);
-      border-color: rgba(255,255,255,0.4);
-      box-shadow: 0 30px 50px -15px black;
+      transform: translateY(-16px);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: 0 40px 60px -20px black, 0 0 20px rgba(100,150,255,0.3);
     }
     .price {
       font-size: 3rem;
@@ -368,9 +392,13 @@
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
+      transition: transform 0.3s;
+    }
+    .pricing-card:hover .price {
+      transform: scale(1.02);
     }
 
-    /* схема-шаги с анимацией */
+    /* схема-шаги с анимацией и вращением иконок */
     .flow-step {
       flex: 1;
       min-width: 140px;
@@ -380,19 +408,20 @@
       padding: 1.2rem;
       text-align: center;
       border-bottom: 2px solid rgba(130, 160, 255, 0.6);
-      transition: all 0.4s ease;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.2);
     }
     .flow-step:hover {
-      transform: scale(1.05);
-      background: rgba(30, 35, 55, 0.9);
+      transform: translateY(-8px) scale(1.03);
+      background: rgba(30, 35, 55, 0.95);
       border-bottom-width: 4px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.4);
     }
     .flow-step i {
-      transition: transform 0.3s;
+      transition: transform 0.4s ease, color 0.2s;
     }
     .flow-step:hover i {
-      transform: rotate(5deg) scale(1.1);
+      transform: rotate(8deg) scale(1.2);
+      color: #aac3ff;
     }
 
     footer {
@@ -413,9 +442,10 @@
     ::-webkit-scrollbar-thumb {
       background: #3c3f6e;
       border-radius: 10px;
+      transition: background 0.3s;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #5f6caf;
+      background: #7b8dff;
     }
 
     /* Hero анимированные иконки */
@@ -426,7 +456,7 @@
     }
     @keyframes float {
       0% { transform: translateY(0px); }
-      50% { transform: translateY(-6px); }
+      50% { transform: translateY(-8px); }
       100% { transform: translateY(0px); }
     }
 
@@ -434,22 +464,23 @@
       transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     }
     .donate-btn-group button:hover {
-      transform: translateY(-4px);
-      filter: brightness(1.1);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+      transform: translateY(-5px);
+      filter: brightness(1.15);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.5);
     }
 
     .icon-lg {
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       margin-bottom: 1rem;
       background: linear-gradient(145deg, #d0d9ff, #90a0ff);
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
-      transition: transform 0.3s;
+      transition: transform 0.3s, filter 0.3s;
     }
     .glass-card:hover .icon-lg {
-      transform: scale(1.05);
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 6px rgba(100,150,255,0.5));
     }
 
     /* анимация для блока самообучения */
@@ -458,8 +489,14 @@
     }
     @keyframes pulseRing {
       0% { text-shadow: 0 0 0 rgba(100,150,255,0); }
-      50% { text-shadow: 0 0 10px rgba(100,150,255,0.5); }
+      50% { text-shadow: 0 0 16px rgba(100,150,255,0.7); }
       100% { text-shadow: 0 0 0 rgba(100,150,255,0); }
+    }
+
+    /* дополнительная анимация для элементов */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
   </style>
 </head>
@@ -492,7 +529,7 @@
     </div>
   </div>
 
-  <!-- Описание проекта -->
+  <!-- Описание проекта (оставлен контент) -->
   <div class="section-container" id="about">
     <div class="fade-up">
       <div class="badge" style="margin-bottom: 1rem;">проблема → решение</div>
@@ -559,7 +596,7 @@
     </div>
   </div>
 
-  <!-- Технические уровни -->
+  <!-- Технические уровни (сокращён) -->
   <div class="section-container">
     <div class="fade-up">
       <div class="badge"><i class="fas fa-cubes"></i> инновации</div>
@@ -570,12 +607,6 @@
       <div class="fade-up glass-card"><i class="fas fa-waveform icon-lg"></i><h3>Layer 1 — GAN Mimicry</h3><p>Генератор против дискриминатора. TLS-хендшейк на уровне JA3/JA3S, LSTM имитирует человеческие паузы.</p></div>
       <div class="fade-up glass-card"><i class="fas fa-chess-board icon-lg"></i><h3>Layer 2 — Adversarial Hardening</h3><p>Постоянная красная команда — одна модель ищет уязвимости, другая учится их избегать. Jitter Engine + критерий Колмогорова–Смирнова.</p></div>
       <div class="fade-up glass-card"><i class="fas fa-exchange-alt icon-lg"></i><h3>Layer 3 — Contextual Bandit</h3><p>Thompson Sampling с контекстом (ISP-ID, время суток, тип контента). Поддержка gRPC, WebRTC и DNS-over-HTTPS.</p></div>
-    </div>
-    <div class="fade-up tech-stack" style="justify-content: center; margin-top: 2rem;">
-      <span class="tech-item"><i class="fas fa-chart-line"></i> RL + Thompson</span>
-      <span class="tech-item"><i class="fas fa-brain"></i> GAN + LSTM</span>
-      <span class="tech-item"><i class="fas fa-lock"></i> Secure Aggregation FL</span>
-      <span class="tech-item"><i class="fas fa-clock"></i> Zero-day ~2ч</span>
     </div>
   </div>
 
@@ -647,7 +678,7 @@
 </main>
 
 <script>
-  // Расширенный canvas с частицами и связями (нейросетевой стиль)
+  // Улучшенный canvas с частицами и связями (мерцание, цветные точки)
   const canvas = document.getElementById('particles-canvas');
   const ctx = canvas.getContext('2d');
   let width, height;
@@ -664,15 +695,16 @@
   
   function initParticles() {
     particles = [];
-    const particleCount = Math.min(100, Math.floor(width * height / 10000));
+    const particleCount = Math.min(130, Math.floor(width * height / 9000));
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 2.5 + 1,
-        alpha: Math.random() * 0.5 + 0.2,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
+        radius: Math.random() * 2.8 + 1,
+        alpha: Math.random() * 0.6 + 0.2,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        hue: 200 + Math.random() * 60,
       });
     }
   }
@@ -686,42 +718,41 @@
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 120) {
+        if (distance < 130) {
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
-          const opacity = (1 - distance / 120) * 0.25;
+          const opacity = (1 - distance / 130) * 0.3;
           ctx.strokeStyle = `rgba(140, 180, 255, ${opacity})`;
-          ctx.lineWidth = 0.8;
+          ctx.lineWidth = 0.9;
           ctx.stroke();
         }
       }
     }
-    // рисуем частицы
+    // рисуем частицы с цветовым мерцанием
     for (let p of particles) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(160, 190, 255, ${p.alpha * 0.8})`;
+      const hueShift = (Date.now() * 0.002 + p.x * 0.01) % 360;
+      ctx.fillStyle = `hsla(${p.hue + hueShift * 0.5}, 70%, 65%, ${p.alpha * 0.9})`;
       ctx.fill();
-      // эффект свечения
-      ctx.shadowBlur = 6;
-      ctx.shadowColor = "#6f8fff";
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = `hsl(${p.hue}, 80%, 65%)`;
       ctx.fill();
       ctx.shadowBlur = 0;
       
       p.x += p.vx;
       p.y += p.vy;
       
-      // реакция на мышь (отталкивание)
       if (mouseX !== null && mouseY !== null) {
         const dx = p.x - mouseX;
         const dy = p.y - mouseY;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < 100) {
           const angle = Math.atan2(dy, dx);
-          const force = (100 - dist) / 1000;
-          p.x += Math.cos(angle) * force * 2;
-          p.y += Math.sin(angle) * force * 2;
+          const force = (100 - dist) / 800;
+          p.x += Math.cos(angle) * force * 2.5;
+          p.y += Math.sin(angle) * force * 2.5;
         }
       }
       
@@ -737,17 +768,20 @@
   window.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    // кастомный курсор
     const cursor = document.getElementById('customCursor');
     if(cursor) {
       cursor.style.left = e.clientX + 'px';
       cursor.style.top = e.clientY + 'px';
     }
+    // hover эффект для кликабельных элементов
+    const target = e.target.closest('a, button, .btn, .glass-card, .pricing-card, .tech-item, .flow-step');
+    if (target && cursor) cursor.classList.add('hover-effect');
+    else if (cursor) cursor.classList.remove('hover-effect');
   });
   resizeCanvas();
   drawParticles();
   
-  // Intersection Observer для анимации блоков с более низким порогом
+  // Intersection Observer для анимации
   const fadeElements = document.querySelectorAll('.fade-up');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -756,10 +790,9 @@
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1, rootMargin: "0px 0px -10px 0px" });
+  }, { threshold: 0.12, rootMargin: "0px 0px -20px 0px" });
   
   fadeElements.forEach(el => observer.observe(el));
-  // принудительно показываем видимые
   setTimeout(() => {
     document.querySelectorAll('.fade-up').forEach(el => {
       if(el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('visible');
@@ -782,7 +815,6 @@
     else if(val) alert('Пожалуйста, введите корректную сумму.');
   });
   
-  // плавный скролл
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
       const targetId = this.getAttribute('href');
@@ -792,7 +824,6 @@
     });
   });
   
-  // скрыть курсор при уходе мыши с окна
   window.addEventListener('mouseleave', () => {
     const cursor = document.getElementById('customCursor');
     if(cursor) cursor.style.opacity = '0';
