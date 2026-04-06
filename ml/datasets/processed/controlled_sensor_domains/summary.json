@@ -1,0 +1,42 @@
+{
+  "applications": [
+    "browsing",
+    "streaming",
+    "bulk_transfer",
+    "voice"
+  ],
+  "baseline_rows": 25,
+  "domains": [
+    "fiber_lab",
+    "home_wifi",
+    "lte_edge",
+    "public_hotspot",
+    "satellite_emulated"
+  ],
+  "generated_paths": [
+    "ml/datasets/processed/controlled_sensor_domains/fiber_lab.csv",
+    "ml/datasets/processed/controlled_sensor_domains/home_wifi.csv",
+    "ml/datasets/processed/controlled_sensor_domains/lte_edge.csv",
+    "ml/datasets/processed/controlled_sensor_domains/public_hotspot.csv",
+    "ml/datasets/processed/controlled_sensor_domains/satellite_emulated.csv"
+  ],
+  "generator": "controlled_sensor_domains_v1",
+  "impairment_rows": 25,
+  "recovery_rows": 15,
+  "rows_by_domain": {
+    "fiber_lab": 6240,
+    "home_wifi": 6240,
+    "lte_edge": 6240,
+    "public_hotspot": 6240,
+    "satellite_emulated": 6240
+  },
+  "seed": 42,
+  "sessions_by_domain": {
+    "fiber_lab": 96,
+    "home_wifi": 96,
+    "lte_edge": 96,
+    "public_hotspot": 96,
+    "satellite_emulated": 96
+  },
+  "sessions_per_application": 24
+}

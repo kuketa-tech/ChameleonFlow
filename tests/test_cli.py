@@ -77,6 +77,20 @@ def test_generate_sensor_sample_command_writes_rows(tmp_path) -> None:
     assert "generated 40 sensor rows" in result.stdout
 
 
+def test_generate_controlled_sensor_domains_help_lists_domain_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "generate-controlled-sensor-domains", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--domain" in result.stdout
+    assert "--application" in result.stdout
+
+
 def test_prepare_browser_iat_from_pcap_help_lists_max_iat_option() -> None:
     result = subprocess.run(
         [sys.executable, "main.py", "prepare-browser-iat-from-pcap", "--help"],
@@ -118,9 +132,65 @@ def test_prepare_iscxvpn2016_sensor_help_runs() -> None:
     assert "--positive-pattern" in result.stdout
 
 
+def test_init_sensor_experiment_help_lists_scenario_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "init-sensor-experiment", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--baseline-seconds" in result.stdout
+    assert "--recovery-seconds" in result.stdout
+
+
+def test_build_sensor_experiment_dataset_help_runs() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "build-sensor-experiment-dataset", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--input" in result.stdout
+    assert "--strict-coverage" in result.stdout
+
+
+def test_run_sensor_ping_experiment_help_runs() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "run-sensor-ping-experiment", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "TARGET" in result.stdout
+    assert "INTERFACE" in result.stdout
+    assert "--ping-interval-seconds" in result.stdout
+
+
 def test_train_morpher_help_lists_device_option() -> None:
     result = subprocess.run(
         [sys.executable, "main.py", "train-morpher", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--device" in result.stdout
+
+
+def test_infer_morpher_help_lists_device_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "infer-morpher", "--help"],
         cwd=PROJECT_ROOT,
         check=False,
         capture_output=True,
@@ -144,6 +214,33 @@ def test_train_sensor_help_lists_threshold_option() -> None:
     assert "--threshold" in result.stdout
 
 
+def test_infer_sensor_help_lists_metadata_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "infer-sensor", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--metadata-path" in result.stdout or "--metadata" in result.stdout
+
+
+def test_train_sensor_multidomain_help_lists_balance_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "train-sensor-multidomain", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--input" in result.stdout
+    assert "--balance-domains" in result.stdout
+
+
 def test_evaluate_sensor_transfer_help_lists_eval_input_option() -> None:
     result = subprocess.run(
         [sys.executable, "main.py", "evaluate-sensor-transfer", "--help"],
@@ -156,3 +253,17 @@ def test_evaluate_sensor_transfer_help_lists_eval_input_option() -> None:
     assert result.returncode == 0
     assert "--algorithm" in result.stdout
     assert "--max-eval-rows" in result.stdout
+
+
+def test_evaluate_sensor_loo_help_lists_balance_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "evaluate-sensor-loo", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--input" in result.stdout
+    assert "--balance-domains" in result.stdout

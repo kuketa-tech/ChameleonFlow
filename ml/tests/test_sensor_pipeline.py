@@ -83,6 +83,12 @@ def test_build_sensor_feature_frame_aggregates_5_second_windows() -> None:
     assert row["flow_iat_cv"] == 20_000.0 / 75_000.0
     assert row["active_idle_ratio"] == 3_500.0 / 1_500.0
     assert row["syn_flag_ratio"] == 3.0 / 18.0
+    assert row["packet_loss_ratio_delta"] == 0.0
+    assert row["rtt_mean_ratio_to_session_start"] == 1.0
+    assert row["packets_per_second_ratio_to_session_start"] == 1.0
+    assert row["retransmission_ratio_delta"] == 0.0
+    assert row["flow_iat_cv_delta"] == 0.0
+    assert row["active_idle_ratio_to_session_start"] == 1.0
     assert row["label"] == 1
 
 

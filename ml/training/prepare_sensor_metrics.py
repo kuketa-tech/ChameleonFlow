@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
@@ -40,17 +41,34 @@ def _resolve_source_column(frame: pd.DataFrame, canonical_name: str) -> str:
     raise ValueError(msg)
 
 
-def build_sensor_metrics_frame(raw_frame: pd.DataFrame) -> pd.DataFrame:
+def build_sensor_metrics_frame(
+    raw_frame: pd.DataFrame,
+    *,
+    require_label: bool = True,
+    passthrough_columns: Sequence[str] = (),
+) -> pd.DataFrame:
     renamed_columns: dict[str, str] = {}
-    for canonical_name in RAW_SENSOR_COLUMNS:
+    required_columns = sorted(RAW_SENSOR_COLUMNS - ({ "label"} if not require_label else set()))
+    for canonical_name in required_columns:
         source_column = _resolve_source_column(raw_frame, canonical_name)
         renamed_columns[source_column] = canonical_name
 
     frame = raw_frame.rename(columns=renamed_columns).copy()
+    if require_label:
+        source_label_column = _resolve_source_column(raw_frame, "label")
+        frame = frame.rename(columns={source_label_column: "label"})
+    else:
+        frame["label"] = 0
+
     optional_columns = [
         column for column in OPTIONAL_SENSOR_COLUMN_AGGREGATIONS if column in frame.columns
     ]
-    prepared = frame[[*RAW_SENSOR_COLUMN_LIST, *optional_columns]].copy()
+    passthrough_list = [
+        column
+        for column in passthrough_columns
+        if column in frame.columns and column not in { *RAW_SENSOR_COLUMN_LIST, *optional_columns}
+    ]
+    prepared = frame[[*RAW_SENSOR_COLUMN_LIST, *optional_columns, *passthrough_list]].copy()
     prepared["timestamp"] = pd.to_datetime(prepared["timestamp"], utc=True, format="mixed")
     prepared["label"] = prepared["label"].astype(int)
 

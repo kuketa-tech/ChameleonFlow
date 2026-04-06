@@ -29,6 +29,13 @@ FEATURE_COLUMNS = [
     "syn_flag_ratio",
     "ack_flag_ratio",
     "psh_flag_ratio",
+    "packet_loss_ratio_delta",
+    "rtt_mean_ratio_to_session_start",
+    "packets_per_second_ratio_to_session_start",
+    "retransmission_ratio_delta",
+    "flow_bytes_per_second_ratio_to_session_start",
+    "flow_iat_cv_delta",
+    "active_idle_ratio_to_session_start",
 ]
 
 RAW_SENSOR_COLUMN_LIST = [
@@ -112,7 +119,9 @@ def build_sensor_feature_frame(
             aggregations[column] = (column, aggregation)
 
     grouped = frame.groupby(["session_id", "window_start"], as_index=False).agg(**aggregations)
-    grouped = grouped.fillna({"rtt_std": 0.0})
+    grouped = grouped.fillna({"rtt_std": 0.0}).sort_values(
+        ["session_id", "window_start"]
+    ).reset_index(drop=True)
 
     total_packets = (grouped["packets_sent"] + grouped["packets_lost"]).clip(lower=1)
     rtt_mean = grouped["rtt_mean"].clip(lower=1e-6)
@@ -149,13 +158,37 @@ def build_sensor_feature_frame(
         syn_flag_ratio=_column_or_zeros(grouped, "syn_flag_count") / total_packets,
         ack_flag_ratio=_column_or_zeros(grouped, "ack_flag_count") / total_packets,
         psh_flag_ratio=_column_or_zeros(grouped, "psh_flag_count") / total_packets,
-    )[
+    )
+
+    session_start_features = feature_frame.groupby("session_id", sort=False)[
         [
-            "session_id",
-            "window_start",
-            *FEATURE_COLUMNS,
-            "label",
+            "packet_loss_ratio",
+            "rtt_mean_ms",
+            "packets_per_second",
+            "retransmission_ratio",
+            "flow_bytes_per_second",
+            "flow_iat_cv",
+            "active_idle_ratio",
         ]
-    ]
+    ].transform("first")
+
+    feature_frame = feature_frame.assign(
+        packet_loss_ratio_delta=(
+            feature_frame["packet_loss_ratio"] - session_start_features["packet_loss_ratio"]
+        ),
+        rtt_mean_ratio_to_session_start=feature_frame["rtt_mean_ms"]
+        / session_start_features["rtt_mean_ms"].clip(lower=1e-6),
+        packets_per_second_ratio_to_session_start=feature_frame["packets_per_second"]
+        / session_start_features["packets_per_second"].clip(lower=1e-6),
+        retransmission_ratio_delta=(
+            feature_frame["retransmission_ratio"]
+            - session_start_features["retransmission_ratio"]
+        ),
+        flow_bytes_per_second_ratio_to_session_start=feature_frame["flow_bytes_per_second"]
+        / session_start_features["flow_bytes_per_second"].clip(lower=1.0),
+        flow_iat_cv_delta=feature_frame["flow_iat_cv"] - session_start_features["flow_iat_cv"],
+        active_idle_ratio_to_session_start=feature_frame["active_idle_ratio"]
+        / session_start_features["active_idle_ratio"].clip(lower=1e-6),
+    )[["session_id", "window_start", *FEATURE_COLUMNS, "label"]]
 
     return feature_frame

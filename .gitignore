@@ -14,5 +14,8 @@ ml/exported/
 ml/datasets/raw/**
 ml/datasets/processed/**
 !ml/datasets/processed/.gitkeep
+!ml/datasets/processed/controlled_sensor_domains/
+!ml/datasets/processed/controlled_sensor_domains/*.csv
+!ml/datasets/processed/controlled_sensor_domains/summary.json
 !ml/datasets/raw/iscxvpn2016/
 !ml/datasets/raw/iscxvpn2016/README.md
