@@ -1,0 +1,60 @@
+datasets:
+  - id: iscxids2012
+    task: sensor
+    title: ISCXIDS2012
+    provider: Canadian Institute for Cybersecurity, UNB
+    official_url: https://www.unb.ca/cic/datasets/ids.html
+    local_dir: ml/datasets/raw/iscxids2012
+    formats:
+      - pcap
+    recommended_for:
+      - labeled anomalous traffic replays
+      - baseline anomaly scenarios
+    preprocessing_notes:
+      - Extract packet or flow metrics into 5-second windows before training.
+      - Use normal days as benign reference and attack windows as degraded examples.
+  - id: cicids2017
+    task: sensor
+    title: CIC-IDS2017
+    provider: Canadian Institute for Cybersecurity, UNB
+    official_url: https://www.unb.ca/cic/datasets/ids-2017.html
+    local_dir: ml/datasets/raw/cicids2017
+    formats:
+      - pcap
+      - csv
+    recommended_for:
+      - benign and attack flow diversity
+      - replay and feature engineering validation
+    preprocessing_notes:
+      - Prefer Monday benign traffic for healthy windows.
+      - Derive degraded windows from attack periods or pair with synthetic tc netem impairment.
+  - id: iscxvpn2016
+    task: shared
+    title: ISCX VPN-nonVPN 2016
+    provider: Canadian Institute for Cybersecurity, UNB
+    official_url: https://www.unb.ca/cic/datasets/vpn.html
+    local_dir: ml/datasets/raw/iscxvpn2016
+    formats:
+      - pcap
+      - csv
+    recommended_for:
+      - browser-like IAT extraction
+      - encrypted traffic baselines
+      - supplemental sensor training
+    preprocessing_notes:
+      - For morpher, start with Web Browsing traces from Firefox and Chrome.
+      - For sensor, use as realistic encrypted background traffic rather than the only anomaly source.
+  - id: mawi-archive
+    task: morpher
+    title: MAWI Working Group Traffic Archive
+    provider: WIDE Project
+    official_url: https://mawi.wide.ad.jp/mawi/
+    local_dir: ml/datasets/raw/mawi
+    formats:
+      - pcap
+    recommended_for:
+      - supplemental timing distribution validation
+      - long-horizon background traffic statistics
+    preprocessing_notes:
+      - Use as supplemental validation, not as the primary browser-like corpus.
+      - Filter aggressively because archive traffic is backbone-wide rather than browser-session-specific.

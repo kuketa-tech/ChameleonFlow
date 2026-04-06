@@ -1,0 +1,10 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+database:
+  url: "postgresql+asyncpg://chameleonflow:chameleonflow@postgres:5432/chameleonflow"
+
+models:
+  storage_dir: "/app/models"
+  public_base_url: "http://localhost:8000/artifacts"

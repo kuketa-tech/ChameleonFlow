@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# ML artifacts and local datasets
+ml/exported/
+ml/datasets/raw/**
+ml/datasets/processed/**
+!ml/datasets/processed/.gitkeep
+!ml/datasets/raw/iscxvpn2016/
+!ml/datasets/raw/iscxvpn2016/README.md

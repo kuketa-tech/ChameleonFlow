@@ -1,0 +1,11 @@
+runtime:
+  log_level: info
+  metrics_port: 9100
+
+server:
+  base_url: "http://localhost:8000"
+
+models:
+  sensor_path: "ml/exported/sensor.onnx"
+  morpher_path: "ml/exported/morpher.onnx"
+  bandit_path: "ml/exported/bandit.vw"
