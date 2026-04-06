@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ChameleonFlow — Адаптивный обход блокировок на базе ML</title>
+  <!-- Google Fonts + Preconnect -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #020205;
+      font-family: 'Inter', sans-serif;
+      color: #edf2ff;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      position: relative;
+      cursor: default;
+    }
+
+    /* кастомный курсор — с эффектом следа и масштабирования */
+    .custom-cursor {
+      width: 24px;
+      height: 24px;
+      background: rgba(100, 150, 255, 0.25);
+      border: 2px solid rgba(140, 180, 255, 0.8);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+      transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), width 0.2s, height 0.2s, background 0.2s;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+      box-shadow: 0 0 12px rgba(100, 150, 255, 0.6);
+    }
+    .custom-cursor.hover-effect {
+      width: 48px;
+      height: 48px;
+      background: rgba(100, 150, 255, 0.15);
+      border-width: 3px;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    /* CANVAS для динамического фона с частицами и связями (улучшенные цвета и мерцание) */
+    #particles-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* анимированный градиентный оверлей с движением */
+    .animated-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 40% 50%, rgba(20, 30, 80, 0.5), rgba(2, 2, 5, 0.9));
+      z-index: 1;
+      pointer-events: none;
+      animation: gradientShift 16s ease infinite alternate;
+    }
+
+    @keyframes gradientShift {
+      0% { opacity: 0.6; background-position: 0% 0%; background-size: 100% 100%; }
+      50% { opacity: 0.85; background-position: 20% 30%; background-size: 150% 150%; }
+      100% { opacity: 0.7; background-position: -10% 20%; background-size: 120% 120%; }
+    }
+
+    /* сетка с параллакс-эффектом */
+    .grid-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(70, 100, 200, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(70, 100, 200, 0.08) 1px, transparent 1px);
+      background-size: 55px 55px;
+      pointer-events: none;
+      z-index: 1;
+      animation: gridParallax 22s linear infinite;
+    }
+
+    @keyframes gridParallax {
+      0% { background-position: 0 0; }
+      100% { background-position: 70px 70px; }
+    }
+
+    /* основной контент выше canvas */
+    main {
+      position: relative;
+      z-index: 10;
+    }
+
+    /* улучшенная анимация появления с эффектом "волна" и трансформацией */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(60px) scale(0.96);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* задержки для элементов сетки с эффектом очереди */
+    .grid-2cols .fade-up:nth-child(1) { transition-delay: 0.05s; }
+    .grid-2cols .fade-up:nth-child(2) { transition-delay: 0.15s; }
+    .grid-2cols .fade-up:nth-child(3) { transition-delay: 0.25s; }
+    .grid-2cols .fade-up:nth-child(4) { transition-delay: 0.35s; }
+
+    /* Стеклянные карточки с 3D-эффектом при наведении и улучшенным свечением */
+    .glass-card {
+      background: rgba(8, 8, 14, 0.55);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 2rem;
+      transition: all 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      transform-style: preserve-3d;
+      transform: perspective(1000px) translateZ(0);
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.8s ease;
+      pointer-events: none;
+    }
+
+    .glass-card:hover::before {
+      left: 100%;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(120, 160, 255, 0.8);
+      background: rgba(18, 18, 32, 0.85);
+      transform: perspective(1000px) translateY(-10px) translateZ(20px) scale(1.01);
+      box-shadow: 0 30px 45px -12px rgba(0,0,0,0.9), 0 0 0 1px rgba(100,150,255,0.3);
+    }
+
+    /* кнопки — современные градиенты + пульсация + ripple */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+      color: #020617;
+      font-weight: 700;
+      padding: 0.9rem 2rem;
+      border-radius: 3rem;
+      text-decoration: none;
+      transition: transform 0.25s ease, box-shadow 0.3s ease, filter 0.2s;
+      letter-spacing: -0.2px;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255,255,255,0.5);
+      filter: brightness(1.02);
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      transform: translate(-50%, -50%);
+      transition: width 0.5s, height 0.5s;
+      z-index: -1;
+    }
+
+    .btn:active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.4);
+      backdrop-filter: blur(4px);
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: white;
+      transform: scale(1.02);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 12px rgba(255,255,255,0.3);
+    }
+
+    .btn-dark {
+      background: linear-gradient(145deg, #13131a, #09090e);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-dark:hover {
+      background: linear-gradient(145deg, #1f1f2e, #12121a);
+      transform: translateY(-4px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(100,150,255,0.4);
+    }
+
+    /* секции */
+    .section-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .section-container {
+        padding: 3rem 1.5rem;
+      }
+    }
+
+    h1 {
+      font-size: clamp(3rem, 8vw, 5.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #FFFFFF 20%, #b9c3ff 70%, #a0a5f0 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: textGlow 4s infinite alternate;
+      transition: text-shadow 0.3s;
+    }
+
+    @keyframes textGlow {
+      0% { text-shadow: 0 0 0px rgba(160,180,255,0); }
+      100% { text-shadow: 0 0 25px rgba(160,180,255,0.6); }
+    }
+
+    h2 {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #f0f3ff, #b9c3ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      position: relative;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    h2:hover {
+      transform: scale(1.02);
+      text-shadow: 0 0 8px rgba(185,195,255,0.4);
+    }
+
+    .badge {
+      background: rgba(110, 130, 200, 0.25);
+      backdrop-filter: blur(8px);
+      padding: 0.35rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      width: fit-content;
+      border: 1px solid rgba(255,255,255,0.2);
+      letter-spacing: 0.3px;
+      transition: all 0.3s ease;
+    }
+    .badge:hover {
+      background: rgba(110, 130, 200, 0.45);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    .grid-2cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .tech-item {
+      background: rgba(30, 40, 60, 0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 2rem;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+    }
+    .tech-item:hover {
+      background: rgba(80, 100, 150, 0.7);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    }
+
+    /* таблица улучшенная с анимацией строк и плавным появлением */
+    .comparison-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      border-radius: 1.5rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .comparison-table th, .comparison-table td {
+      padding: 1.2rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.25s ease;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table th {
+      font-weight: 700;
+      background: rgba(20, 25, 45, 0.7);
+      font-size: 1rem;
+    }
+    .comparison-table tr:hover td {
+      background: rgba(100, 150, 255, 0.12);
+      transform: scale(1.002);
+      padding-left: 1.3rem;
+    }
+
+    /* карточки цен с анимацией пульсации и 3D */
+    .pricing-card {
+      background: linear-gradient(145deg, #0a0a12, #030308);
+      border-radius: 2rem;
+      padding: 2rem;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: all 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+      position: relative;
+      overflow: hidden;
+      transform: translateY(0);
+    }
+    .pricing-card:hover {
+      transform: translateY(-16px);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: 0 40px 60px -20px black, 0 0 20px rgba(100,150,255,0.3);
+    }
+    .price {
+      font-size: 3rem;
+      font-weight: 800;
+      margin: 1rem 0;
+      background: linear-gradient(135deg, #fff, #b0b9ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      transition: transform 0.3s;
+    }
+    .pricing-card:hover .price {
+      transform: scale(1.02);
+    }
+
+    /* схема-шаги с анимацией и вращением иконок */
+    .flow-step {
+      flex: 1;
+      min-width: 140px;
+      background: rgba(12, 12, 20, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 2rem;
+      padding: 1.2rem;
+      text-align: center;
+      border-bottom: 2px solid rgba(130, 160, 255, 0.6);
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+    }
+    .flow-step:hover {
+      transform: translateY(-8px) scale(1.03);
+      background: rgba(30, 35, 55, 0.95);
+      border-bottom-width: 4px;
+      box-shadow: 0 15px 25px rgba(0,0,0,0.4);
+    }
+    .flow-step i {
+      transition: transform 0.4s ease, color 0.2s;
+    }
+    .flow-step:hover i {
+      transform: rotate(8deg) scale(1.2);
+      color: #aac3ff;
+    }
+
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      backdrop-filter: blur(5px);
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #05050a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3c3f6e;
+      border-radius: 10px;
+      transition: background 0.3s;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7b8dff;
+    }
+
+    /* Hero анимированные иконки */
+    .hero-badge-animated {
+      display: inline-flex;
+      gap: 0.5rem;
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .donate-btn-group button {
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    .donate-btn-group button:hover {
+      transform: translateY(-5px);
+      filter: brightness(1.15);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+    }
+
+    .icon-lg {
+      font-size: 2.4rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(145deg, #d0d9ff, #90a0ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      transition: transform 0.3s, filter 0.3s;
+    }
+    .glass-card:hover .icon-lg {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 6px rgba(100,150,255,0.5));
+    }
+
+    /* анимация для блока самообучения */
+    .pulse-sync {
+      animation: pulseRing 2s infinite;
+    }
+    @keyframes pulseRing {
+      0% { text-shadow: 0 0 0 rgba(100,150,255,0); }
+      50% { text-shadow: 0 0 16px rgba(100,150,255,0.7); }
+      100% { text-shadow: 0 0 0 rgba(100,150,255,0); }
+    }
+
+    /* дополнительная анимация для элементов */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="custom-cursor" id="customCursor"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="animated-gradient"></div>
+<div class="grid-overlay"></div>
+
+<main>
+  <!-- Hero section -->
+  <div class="hero-gradient-bg">
+    <div class="section-container" style="padding-top: 6rem; padding-bottom: 4rem;">
+      <div class="fade-up visible"> 
+        <div class="badge hero-badge-animated" style="margin-bottom: 1.5rem;">
+          <i class="fas fa-shield-alt" style="margin-right: 6px;"></i> Next‑gen evasion engine
+          <i class="fas fa-arrow-trend-down" style="margin-left: 6px;"></i>
+        </div>
+        <h1>ChameleonFlow</h1>
+        <p style="font-size: 1.4rem; max-width: 720px; margin-top: 1.2rem; font-weight: 400; color: #ccd6f6; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+          Высокоуровневый обход ограничений на базе ML и сложных алгоритмов.<br>
+          Замедления, региональные блоки, DPI — под полным контролем.
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2.5rem;">
+          <a href="#subscription" class="btn"><i class="fas fa-bolt"></i> Начать защиту</a>
+          <a href="#donate" class="btn btn-outline"><i class="fas fa-heart"></i> Поддержать проект</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Описание проекта (оставлен контент) -->
+  <div class="section-container" id="about">
+    <div class="fade-up">
+      <div class="badge" style="margin-bottom: 1rem;">проблема → решение</div>
+      <h2>VPN статичны,<br>а блокировки — эволюционируют</h2>
+      <p style="font-size: 1.2rem; max-width: 800px; margin-bottom: 2rem;">Обычные протоколы имеют фиксированные отпечатки. ТСПУ распознают их за секунды. ChameleonFlow не маскируется — он становится неотличимым от живого трафика.</p>
+    </div>
+    <div class="grid-2cols" style="margin-top: 2rem;">
+      <div class="fade-up glass-card" style="padding: 1.8rem;">
+        <div class="icon-lg"><i class="fas fa-brain"></i></div>
+        <h3 style="font-size: 1.6rem; margin-bottom: 0.5rem;">5 ключевых преимуществ</h3>
+        <ul style="list-style: none; margin-top: 1rem;">
+          <li style="margin-bottom: 0.8rem;"><i class="fas fa-check-circle" style="color: #a5f0c0; margin-right: 0.6rem;"></i> <strong>Динамическая мутация</strong> — ML-морфер подгоняет пакеты под профиль легитимного сервиса</li>
+          <li style="margin-bottom: 0.8rem;"><i class="fas fa-chart-line"></i> <strong>Контекстуальный бандит</strong> — RL-агент с Thompson Sampling выбирает оптимальный транспорт</li>
+          <li style="margin-bottom: 0.8rem;"><i class="fas fa-robot"></i> <strong>GAN Mimicry</strong> — генеративно-состязательная сеть симулирует TLS JA3/JA3S как Chrome 124</li>
+          <li style="margin-bottom: 0.8rem;"><i class="fas fa-users"></i> <strong>Federated Learning</strong> — общая модель обновляется каждые 12 часов без утечки персональных данных</li>
+          <li style="margin-bottom: 0.8rem;"><i class="fas fa-shield-virus"></i> <strong>Zero-day Response</strong> — автономное дообучение за ~2 часа при обнаружении новой сигнатуры</li>
+        </ul>
+      </div>
+      <div class="fade-up glass-card" style="padding: 1.8rem;">
+        <div class="icon-lg"><i class="fas fa-microchip"></i></div>
+        <h3 style="font-size: 1.6rem; margin-bottom: 0.5rem;">Архитектура L0–L3</h3>
+        <p><strong>Layer 0 — Sensing:</strong> отдельные ML-модели для каждого провайдера + Threat Intel Feed.</p>
+        <p style="margin-top: 1rem;"><strong>Layer 1 — GAN Mimicry:</strong> генератор vs дискриминатор, LSTM-паузы как у человека, подделка TLS-рукопожатия.</p>
+        <p style="margin-top: 1rem;"><strong>Layer 2 — Adversarial Hardening:</strong> внутренняя «красная команда» + Jitter Engine с проверкой Колмогорова–Смирнова.</p>
+        <p style="margin-top: 1rem;"><strong>Layer 3 — Transport:</strong> Contextual Bandit + поддержка gRPC, WebRTC, DNS-over-HTTPS.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Как это работает (схема) -->
+  <div class="section-container" style="background: radial-gradient(ellipse at 30% 40%, rgba(40,45,80,0.25), transparent); border-radius: 3rem; margin: 1rem 2rem; width: auto;">
+    <div class="fade-up">
+      <div class="badge"><i class="fas fa-project-diagram"></i> реальный поток</div>
+      <h2 style="margin-top: 1rem;">От запроса до туннеля</h2>
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin: 2rem 0;">
+        <div class="flow-step"><i class="fas fa-stream fa-lg"></i><br><strong>Твой трафик</strong></div>
+        <div class="flow-step"><i class="fas fa-chart-simple"></i><br><strong>Классификатор</strong><br><span style="font-size:0.8rem;">тип блокировки</span></div>
+        <div class="flow-step"><i class="fas fa-microchip"></i><br><strong>ML-морфер</strong><br><span style="font-size:0.8rem;">под профиль сервиса</span></div>
+        <div class="flow-step"><i class="fas fa-robot"></i><br><strong>RL-агент</strong><br><span style="font-size:0.8rem;">выбор транспорта</span></div>
+        <div class="flow-step"><i class="fas fa-lock"></i><br><strong>Туннель</strong><br><span style="font-size:0.8rem;">как обычный HTTPS</span></div>
+      </div>
+      <p class="tech-item" style="background: none; text-align: center; display: inline-block; margin: 0 auto;">⚡ Самообучение каждые 12 часов, федеративное усреднение, адаптация под провайдера</p>
+    </div>
+  </div>
+
+  <!-- Сравнение таблица -->
+  <div class="section-container">
+    <div class="fade-up">
+      <div class="badge">превосходство</div>
+      <h2>ChameleonFlow vs классический VPN</h2>
+    </div>
+    <div class="fade-up" style="overflow-x: auto;">
+      <table class="comparison-table">
+        <thead><tr><th>Характеристика</th><th>Обычный VPN</th><th>ChameleonFlow</th></tr></thead>
+        <tbody>
+          <tr><td>Протокол</td><td>Фиксированный (OpenVPN/WireGuard)</td><td>Динамически меняет транспорт (QUIC, gRPC, WebRTC, DoH)</td></tr>
+          <tr><td>Адаптация к блокировкам</td><td>Ручная смена сервера</td><td>RL-агент перестраивается в реальном времени</td></tr>
+          <tr><td>Маскировка трафика</td><td>Статичный отпечаток</td><td>GAN Mimicry — статистически идентичен YouTube/Google Meet</td></tr>
+          <tr><td>Обход DPI (ТСПУ)</td><td>Часто блокируют по JA3</td><td>Подделка JA3/JA3S под Chrome 124, LSTM-паузы</td></tr>
+          <tr><td>Обучение</td><td>Нет</td><td>Federated Learning + Zero-day ответ за 2 часа</td></tr>
+          <tr><td>Региональная специфика</td><td>Один алгоритм для всех</td><td>Отдельная модель для МТС, Ростелеком, Билайн и тд</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Технические уровни (сокращён) -->
+  <div class="section-container">
+    <div class="fade-up">
+      <div class="badge"><i class="fas fa-cubes"></i> инновации</div>
+      <h2>Четыре слоя непревзойдённой защиты</h2>
+    </div>
+    <div class="grid-2cols">
+      <div class="fade-up glass-card"><i class="fas fa-tachometer-alt icon-lg"></i><h3>Layer 0 — Sensing 3.0</h3><p>Трёхголовый сенсор: профилирует каждого провайдера отдельно. Threat Intel Feed обновляется каждую минуту от сообщества.</p></div>
+      <div class="fade-up glass-card"><i class="fas fa-waveform icon-lg"></i><h3>Layer 1 — GAN Mimicry</h3><p>Генератор против дискриминатора. TLS-хендшейк на уровне JA3/JA3S, LSTM имитирует человеческие паузы.</p></div>
+      <div class="fade-up glass-card"><i class="fas fa-chess-board icon-lg"></i><h3>Layer 2 — Adversarial Hardening</h3><p>Постоянная красная команда — одна модель ищет уязвимости, другая учится их избегать. Jitter Engine + критерий Колмогорова–Смирнова.</p></div>
+      <div class="fade-up glass-card"><i class="fas fa-exchange-alt icon-lg"></i><h3>Layer 3 — Contextual Bandit</h3><p>Thompson Sampling с контекстом (ISP-ID, время суток, тип контента). Поддержка gRPC, WebRTC и DNS-over-HTTPS.</p></div>
+    </div>
+  </div>
+
+  <!-- Самообучение -->
+  <div class="section-container">
+    <div class="fade-up glass-card" style="padding: 2rem; text-align: center;">
+      <i class="fas fa-sync-alt pulse-sync" style="font-size: 2.5rem; opacity: 0.9;"></i>
+      <h3 style="margin: 1rem 0;">Эволюционирует быстрее, чем цензоры</h3>
+      <p style="max-width: 700px; margin: 0 auto;">Каждый пользователь анонимно участвует в федеративном обучении. Сервер видит только усреднённые веса моделей, а каждые 12 часов все клиенты получают улучшенные стратегии обхода.</p>
+      <div class="tech-stack" style="justify-content: center; margin-top: 1.5rem;">
+        <span class="tech-item"><i class="fas fa-chart-simple"></i> >99.7% неотличимость</span>
+        <span class="tech-item"><i class="fas fa-database"></i> 2000+ провайдеров в профилях</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Подписка и донаты -->
+  <div class="section-container" id="subscription">
+    <div class="fade-up">
+      <div class="badge">доступно сейчас</div>
+      <h2>Присоединиться к ChameleonFlow</h2>
+      <p style="margin-bottom: 2rem;">Выберите тариф — получите доступ к скачиванию приложения и обновлениям моделей.</p>
+    </div>
+    <div class="grid-2cols" style="margin-bottom: 3rem;">
+      <div class="fade-up pricing-card">
+        <i class="fas fa-mobile-alt" style="font-size: 2.2rem;"></i>
+        <h3 style="margin-top: 0.8rem;">Месячная подписка</h3>
+        <div class="price">$7.99 <span style="font-size: 1rem;">/ месяц</span></div>
+        <ul style="list-style: none; margin: 1rem 0; text-align: left;">
+          <li><i class="fas fa-check"></i> Полный доступ ко всем Layer 0-3</li>
+          <li><i class="fas fa-check"></i> Federated Learning участие</li>
+          <li><i class="fas fa-check"></i> Приоритетные обновления zero-day</li>
+        </ul>
+        <a href="#" class="btn btn-dark" id="subscribeBtn" style="width: 100%; justify-content: center;"><i class="fas fa-download"></i> Скачать приложение</a>
+        <p style="font-size: 0.7rem; margin-top: 0.8rem;">После оплаты ссылка на установку придёт на email</p>
+      </div>
+      <div class="fade-up pricing-card">
+        <i class="fas fa-rocket" style="font-size: 2.2rem;"></i>
+        <h3 style="margin-top: 0.8rem;">Годовая подписка</h3>
+        <div class="price">$69 <span style="font-size: 1rem;">/ год</span></div>
+        <ul style="list-style: none; margin: 1rem 0; text-align: left;">
+          <li><i class="fas fa-gem"></i> Всё из месячного + эксклюзивные стратегии RL</li>
+          <li><i class="fas fa-chart-line"></i> Ранний доступ к бета-фичам (GAN 2.0)</li>
+          <li><i class="fas fa-headset"></i> Приоритетная поддержка</li>
+        </ul>
+        <a href="#" class="btn btn-dark" id="subscribeYearBtn" style="width: 100%; justify-content: center;"><i class="fas fa-download"></i> Выбрать годовой</a>
+      </div>
+    </div>
+
+    <div class="fade-up" id="donate" style="margin-top: 2rem; text-align: center;">
+      <div class="glass-card" style="padding: 2rem;">
+        <i class="fas fa-hand-holding-heart" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+        <h3>Поддержать развитие ChameleonFlow</h3>
+        <p style="max-width: 550px; margin: 0.5rem auto 1.5rem;">Ваше пожертвование идёт на исследования новых методов обхода, GPU-кластеры и open-source инструменты.</p>
+        <div class="donate-btn-group" style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+          <button id="donate10" class="btn btn-outline" style="background: #1f1f2a;"><i class="fas fa-coffee"></i> 10$ — поддержка</button>
+          <button id="donate25" class="btn btn-outline" style="background: #1f1f2a;"><i class="fas fa-heart"></i> 25$ — спонсор</button>
+          <button id="donate50" class="btn btn-outline" style="background: #1f1f2a;"><i class="fas fa-star"></i> 50$ — патрон</button>
+          <button id="customDonate" class="btn btn-outline"><i class="fas fa-pen"></i> Своя сумма</button>
+        </div>
+        <p style="margin-top: 1.5rem; font-size: 0.8rem;">Все платежи защищены, средства пойдут на развитие моделей и серверов.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>ChameleonFlow — передовая ML-защита приватности. Обход DPI, региональных блоков и замедлений. <br>© 2025 — самообучающаяся экосистема. разработчики: Кукета и Сеня Морсин</p>
+  </footer>
+</main>
+
+<script>
+  // Улучшенный canvas с частицами и связями (мерцание, цветные точки)
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  let particles = [];
+  let mouseX = null, mouseY = null;
+  
+  function resizeCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    initParticles();
+  }
+  
+  function initParticles() {
+    particles = [];
+    const particleCount = Math.min(130, Math.floor(width * height / 9000));
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 2.8 + 1,
+        alpha: Math.random() * 0.6 + 0.2,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        hue: 200 + Math.random() * 60,
+      });
+    }
+  }
+  
+  function drawParticles() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, width, height);
+    // рисуем связи
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 130) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          const opacity = (1 - distance / 130) * 0.3;
+          ctx.strokeStyle = `rgba(140, 180, 255, ${opacity})`;
+          ctx.lineWidth = 0.9;
+          ctx.stroke();
+        }
+      }
+    }
+    // рисуем частицы с цветовым мерцанием
+    for (let p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      const hueShift = (Date.now() * 0.002 + p.x * 0.01) % 360;
+      ctx.fillStyle = `hsla(${p.hue + hueShift * 0.5}, 70%, 65%, ${p.alpha * 0.9})`;
+      ctx.fill();
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = `hsl(${p.hue}, 80%, 65%)`;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      p.x += p.vx;
+      p.y += p.vy;
+      
+      if (mouseX !== null && mouseY !== null) {
+        const dx = p.x - mouseX;
+        const dy = p.y - mouseY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          const angle = Math.atan2(dy, dx);
+          const force = (100 - dist) / 800;
+          p.x += Math.cos(angle) * force * 2.5;
+          p.y += Math.sin(angle) * force * 2.5;
+        }
+      }
+      
+      if (p.x < 0) p.x = width;
+      if (p.x > width) p.x = 0;
+      if (p.y < 0) p.y = height;
+      if (p.y > height) p.y = 0;
+    }
+    requestAnimationFrame(drawParticles);
+  }
+  
+  window.addEventListener('resize', () => { resizeCanvas(); });
+  window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    const cursor = document.getElementById('customCursor');
+    if(cursor) {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    }
+    // hover эффект для кликабельных элементов
+    const target = e.target.closest('a, button, .btn, .glass-card, .pricing-card, .tech-item, .flow-step');
+    if (target && cursor) cursor.classList.add('hover-effect');
+    else if (cursor) cursor.classList.remove('hover-effect');
+  });
+  resizeCanvas();
+  drawParticles();
+  
+  // Intersection Observer для анимации
+  const fadeElements = document.querySelectorAll('.fade-up');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -20px 0px" });
+  
+  fadeElements.forEach(el => observer.observe(el));
+  setTimeout(() => {
+    document.querySelectorAll('.fade-up').forEach(el => {
+      if(el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('visible');
+    });
+  }, 100);
+  
+  // подписка (демо)
+  const subBtn = document.getElementById('subscribeBtn');
+  const subYear = document.getElementById('subscribeYearBtn');
+  if(subBtn) subBtn.addEventListener('click', (e) => { e.preventDefault(); alert('🔐 Демо-режим: подписка оформлена. Ссылка для скачивания приложения отправлена на ваш email.'); });
+  if(subYear) subYear.addEventListener('click', (e) => { e.preventDefault(); alert('🌟 Годовая подписка выбрана. Перенаправление на защищённую оплату.'); });
+  
+  function handleDonate(amount) { alert(`💖 Спасибо за поддержку в размере $${amount}! Ваше пожертвование поможет развитию ChameleonFlow.`); }
+  document.getElementById('donate10')?.addEventListener('click', () => handleDonate(10));
+  document.getElementById('donate25')?.addEventListener('click', () => handleDonate(25));
+  document.getElementById('donate50')?.addEventListener('click', () => handleDonate(50));
+  document.getElementById('customDonate')?.addEventListener('click', () => {
+    let val = prompt('Введите сумму в USD (минимально 1$):', '15');
+    if(val && !isNaN(parseFloat(val)) && parseFloat(val) >= 1) handleDonate(parseFloat(val));
+    else if(val) alert('Пожалуйста, введите корректную сумму.');
+  });
+  
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if(targetId === "#" || targetId === "") return;
+      const target = document.querySelector(targetId);
+      if(target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+  
+  window.addEventListener('mouseleave', () => {
+    const cursor = document.getElementById('customCursor');
+    if(cursor) cursor.style.opacity = '0';
+  });
+  window.addEventListener('mouseenter', () => {
+    const cursor = document.getElementById('customCursor');
+    if(cursor) cursor.style.opacity = '1';
+  });
+</script>
+</body>
+</html>
