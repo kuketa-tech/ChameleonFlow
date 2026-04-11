@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Annotated
 
 import typer
 import uvicorn
 
+from client.app.core.agent import run_client_agent
 from client.app.transports.registry import build_transport_registry
 from ml.training.compare_sensor_models import compare_sensor_models
 from ml.training.infer_morpher import infer_morpher
@@ -46,6 +48,26 @@ def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
 def list_transports() -> None:
     for transport_kind in build_transport_registry():
         typer.echo(transport_kind.value)
+
+
+@app.command("client-run")
+def client_run(
+    server_base_url: str = "http://127.0.0.1:8000",
+    isp_id: str = "isp-a",
+    traffic_type: str = "web",
+    sessions: int = 10,
+    seed: int = 42,
+) -> None:
+    result = asyncio.run(
+        run_client_agent(
+            server_base_url=server_base_url,
+            isp_id=isp_id,
+            traffic_type=traffic_type,
+            sessions=sessions,
+            seed=seed,
+        ),
+    )
+    typer.echo(f"sessions={result.sessions_attempted} aggregates_sent={result.aggregates_sent}")
 
 
 @app.command("prepare-browser-iat")

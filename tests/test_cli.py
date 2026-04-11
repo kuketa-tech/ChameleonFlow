@@ -22,6 +22,20 @@ def test_list_transports_outputs_supported_transport_names() -> None:
     assert result.stdout.splitlines() == ["doh", "webrtc", "quic"]
 
 
+def test_client_run_help_lists_server_base_url_option() -> None:
+    result = subprocess.run(
+        [sys.executable, "main.py", "client-run", "--help"],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--server-base-url" in result.stdout
+    assert "--sessions" in result.stdout
+
+
 def test_prepare_browser_iat_command_writes_rows(tmp_path) -> None:
     input_path = tmp_path / "packets.csv"
     output_path = tmp_path / "browser_iat.csv"
