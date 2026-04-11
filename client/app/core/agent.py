@@ -109,5 +109,4 @@ async def run_client_agent(
         aggregates_sent += 1
 
         await asyncio.sleep(0.05)
-
     return AgentRunResult(sessions_attempted=sessions, aggregates_sent=aggregates_sent)
